@@ -1,0 +1,84 @@
+<deployment-project plugin="plugin.apptool" plugin-version="1.0">
+  <configuration build-checksum="1042449369" file="C:\analysis\soundFolder\soundFolder.prj" location="C:\analysis\soundFolder" name="soundFolder" target="target.mlapps" target-name="Package App">
+    <param.appname>soundFolder</param.appname>
+    <param.authnamewatermark>Brian S Miller</param.authnamewatermark>
+    <param.email>brian.miller@aad.gov.au</param.email>
+    <param.company>Australian Antarctic Division</param.company>
+    <param.icon />
+    <param.icons />
+    <param.summary>SoundFolder is a Matlab package for reading acoustic data from folders of timestamped audio files.</param.summary>
+    <param.description>Timestamped audio files are often used in bioacoustic field recordings, where the timestamp is either embedded in the file's name (e.g. 2020-01-01_123456.wav), or is included as a part of the file metadata (e.g. embedded in the header of a WAV file, or as tags in MP3 files).
+ 
+SoundFolder was originally created to facilitate reading the wav audio at user-specified dates and times without having to manually keep track of file names and timestamps. It is especially useful for reading audio from detections that were created by Pamguard (http://www.pamguard.org), since Pamguard detections include the time, channel number, and duration of each detection, but do not necessarily (or typically) include the name of the audio file. SoundFolder provides a simple means to load the audio data from these detections by providing as input the start date &amp; time, duration of audio desired, channel number, and the folder where the timestamped wav files are stored, hence the name soundFolder.</param.description>
+    <param.screenshot />
+    <param.version>1.0</param.version>
+    <param.products.name>
+      <item>MATLAB</item>
+    </param.products.name>
+    <param.products.id>
+      <item>1</item>
+    </param.products.id>
+    <param.products.version>
+      <item>8.3</item>
+    </param.products.version>
+    <param.platforms />
+    <param.output>${PROJECT_ROOT}\soundFolder.mlappinstall</param.output>
+    <param.guid>ff0c43ea-fca2-4c3c-b22f-eff6dae14539</param.guid>
+    <unset>
+      <param.authnamewatermark />
+      <param.email />
+      <param.company />
+      <param.icon />
+      <param.icons />
+      <param.screenshot />
+      <param.version />
+      <param.platforms />
+    </unset>
+    <fileset.main>
+      <file>${PROJECT_ROOT}\getAudioFromFiles.m</file>
+    </fileset.main>
+    <fileset.depfun>
+      <file>C:\analysis\loggers\triton1.93.20160524\disp_msg.m</file>
+      <file>${PROJECT_ROOT}\filenameToTimeStamp.m</file>
+      <file>${PROJECT_ROOT}\html\soundFolder.html</file>
+      <file>${PROJECT_ROOT}\html\soundFolder.png</file>
+      <file>${PROJECT_ROOT}\html\soundFolder_01.png</file>
+      <file>${PROJECT_ROOT}\private\getSoundCacheFolder.m</file>
+      <file>${PROJECT_ROOT}\private\readWavHeader.m</file>
+      <file>${PROJECT_ROOT}\private\readXwavHeader.m</file>
+      <file>C:\analysis\utilsBSM\doTimespansOverlap.m</file>
+      <file>C:\analysis\utilsBSM\recurseDir.m</file>
+    </fileset.depfun>
+    <fileset.resources>
+      <file>${PROJECT_ROOT}\html</file>
+      <file>${PROJECT_ROOT}\private</file>
+      <file>${PROJECT_ROOT}\soundFolder.m</file>
+      <file>${PROJECT_ROOT}\wavFolderInfo.m</file>
+      <file>${PROJECT_ROOT}\xwavFolderInfo.m</file>
+    </fileset.resources>
+    <fileset.package />
+    <build-deliverables>
+      <file location="C:\analysis\soundFolder" name="soundFolder.mlappinstall" optional="false">C:\analysis\soundFolder\soundFolder.mlappinstall</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>C:\Program Files\MATLAB\R2014a</root>
+      <toolboxes />
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>6.2</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>

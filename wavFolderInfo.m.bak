@@ -1,0 +1,96 @@
+function fileInfo = wavFolderInfo(folder,timeStampFormat,refreshCache)
+%fileInfo = wavFolderInfo(folder,timeStampFormat);
+% Get a soundFolder data structure from a folder full of wav files
+% FODLER is a folder full of wav files where the filename of each file 
+% contains a timestamp that corresponds to the start time of the file.
+% wavFolderInfo is a core function of the soundFolder package.
+% 
+% Examples
+%
+% Return the metadata for a folder that contains timestamped wav files
+% from a year long deployment of an AAD recorder:
+% (http://data.aad.gov.au/metadata/records/AAS_4102_longTermAcousticRecordings)
+%
+%    wavFolder = 'M:\Casey2014\'
+%    timeStampFormat = 'yyyy-mm-dd_HH-MM-SS';
+%    casey2014WavInfo = wavFolderInfo(wavFolder,timeStampFormat);
+% 
+% Return metadata for a recording made by PAMGuard
+% 
+%    wavFolder = 'C:\data\pamguard\2013-02-01\';
+%    timeStampFormat = 'yyyymmdd_HHMMSS';
+%    folderInfo = wavFolderInfo(wavFolder,timeStampFormat);
+
+
+% Brian Miller 2017
+
+if nargin < 2
+    customTimeStamp = false;
+else
+    customTimeStamp = true;
+end
+
+if nargin < 3
+    refreshCache = false;
+end
+
+persistent lastFileInfo;
+persistent lastFolder; 
+
+cacheFolder = getSoundCacheFolder;
+warning('off','MATLAB:MKDIR:DirectoryExists');
+status = mkdir(cacheFolder);
+if status==0
+    error([...
+        'wavFolderInfo could not load the cache of soundFolders:\n',...
+        '%s\n',...
+        'Please ensure that this folder exists and is accessible, and retry.'...
+        ],cacheFolder);
+end
+
+if nargin == 0;
+    fprintf('Cache stored at %s:\n',cacheFolder);
+    fprintf('Known soundFolders:\n');
+    eval(sprintf('!dir/s/b %s',cacheFolder))
+    return;
+end
+
+% Make sure the folder actually has a trailing slash
+if ~strcmp(folder(end),filesep)
+    folder(end+1) = filesep;
+end
+
+cacheFile = [cacheFolder matlab.lang.makeValidName(folder) '.mat'];
+
+% Check if this folder is already in the cache
+if refreshCache==false
+    % Cache the last result and return it if folder is the same
+    if (strcmpi(folder,lastFolder));
+        fileInfo = lastFileInfo;
+        return;
+    end
+    
+    if exist(cacheFile,'file')==2
+        load(cacheFile,'fileInfo');
+        lastFolder = folder;
+        lastFileInfo = fileInfo;
+        return;
+    end
+end
+
+% fileNames = dir([folder '*.wav']);
+fileNames = recurseDir(folder,'*.wav');
+for i = 1:length(fileNames);
+    fullName = fileNames(i).name;
+%     fullName = [folder fileNames(i).name];
+    if customTimeStamp;
+        fileInfo(i) = readWavHeader(fullName,timeStampFormat);
+    else
+        fileInfo(i) = readWavHeader(fullName);
+    end
+    fprintf('Reading audio metadata for file %g/%g: %s\n',i,length(fileNames),fileNames(i).name);
+end
+
+save(cacheFile,'fileInfo');
+lastFolder = folder;
+lastFileInfo = fileInfo;
