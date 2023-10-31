@@ -1,0 +1,20 @@
+{
+    "wavFolderInfo":
+    {
+        "inputs":
+        [
+            {"name":"folder", "kind":"required",   "type":"folderpath", "purpose":"Folder containing wav files"},
+            {"name":"timestamp", "kind":"ordered",   "type":["char","choices={'yyyymmdd_HHMMSS','yyyy-mm-dd_HH-MM-SS','yymmddHHMMSS'}"], "purpose":"Format of timestamp embedded in file name (e.g. yyyymmdd_HHMMSS"},
+            {"name":"refresh",  "kind":"ordered", "type":["logical","scalar"], "purpose":"Flag to rescan the folder instead of loading results from the cache"}
+        ]
+    },
+
+    "soundFolderMoved":
+    {
+        "inputs":
+        [
+            {"name":"oldFolder", "kind":"required",   "type":"folderpath", "purpose":"Source folder of wav files to be moved"},
+            {"name":"newFolder", "kind":"required",   "type":"folderpath", "purpose":"Destination folder where wav files will be moved"}
+        ]
+    }
+}
