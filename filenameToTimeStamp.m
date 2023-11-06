@@ -32,8 +32,7 @@ str = regexp(fileName,expression,'match');
 if isempty(str)
     % No date could be extracted from filename    
     timeStamp = datenum([0 1 1 0 0 0]);
-    error('File start timestamp could not be read from header. Using default timestamp of %s',datestr(timeStamp));
-    keyboard;
+    error('File start timestamp could not be read from header.');
 else
     timeStampFormat = strrep(timeStampFormat,'\','');
     timeStamp = datenum(str,timeStampFormat);
