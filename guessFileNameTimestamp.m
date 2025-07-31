@@ -37,11 +37,11 @@ for i = 1:length(forms)
 end
 
 if length(timestamp) > 1 % Multiple matching formats
-    if all(diff(timestamp))==0; % All yield same result
+    if all(diff(timestamp))==0 % All yield same result
         timestamp = timestamp(1);
-        form = form{1}
+        form = form{1};
     end
-
+end
 if length(form)==1
     form=char(form);
 end

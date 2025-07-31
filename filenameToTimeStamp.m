@@ -29,6 +29,10 @@ expression = regexprep(expression,'fff','\\d\\d\\d');
 
 % Now match the string
 str = regexp(fileName,expression,'match');
+if iscell(str{1})
+    str = cellfun(@char,str,'UniformOutput',false)';
+end
+
 if isempty(str)
     % No date could be extracted from filename    
     timeStamp = datenum([0 1 1 0 0 0]);
@@ -51,9 +55,19 @@ fname = '200_2013-12-25_06-00-00.wav';
 form = 'yyyy-mm-dd_HH-MM-SS';
 print(fname,form);
 
+
+fname = '11_2018-02-02_07-00-00.wav';
+form = 'yyyy-mm-dd_HH-MM-SS';
+print(fname,form);
+
 fname = '20150102-140944.wav';
 form = 'yyyymmdd-HHMMSS';
 print(fname,form);
+
+fname = '7387.230116190739.wav';
+form = 'yymmddHHMMSS';
+print(fname,form);
+
 
 function print(fname,form)
 fprintf('%38s:\t %s\t %s\n',...
