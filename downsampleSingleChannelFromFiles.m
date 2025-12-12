@@ -48,6 +48,9 @@ actualDuration = size(audio,1)/fileInfo(1).sampleRate;
 weighting = actualDuration/requestedDuration;
 
 % return only requested channel (one-indexed)
+if isempty(audio)
+    return
+end
 audio = audio(:,channel);
 
 q =  fileInfo(1).sampleRate/newRate;
@@ -67,13 +70,18 @@ function fileInfo = findFilesInTimespan(fileInfo,startTime,endTime)
 %     [~, lastFile] =  histc(endTime,  [fileInfo.endDate]');
     firstFile = find(startTime > [fileInfo.startDate],1,'last');
     lastFile = find(endTime < [fileInfo.endDate],1,'first');
-    
+
+    % Workarounds (might not cover all cases)
     % Corner case: start time is outside of any file times
     if isempty(firstFile) & ~isempty(lastFile)
-    % This is a workaround and won't cover all cases
         firstFile = lastFile; 
     end 
-    
+
+    % Corner case: end time is outside of any file times
+    if ~isempty(firstFile) & isempty(lastFile)
+        lastFile = firstFile; 
+    end 
+
     fileRequired = firstFile:lastFile;
 
     % The code below works reliably, but is slower than it needs to be

@@ -8,7 +8,7 @@ function [audio, weighting, fileInfo, startSample, endSample] = downsampleAudioF
 % will be excluded.
 % This function is part of the soundFolder package.
 % See also: audioread, wavread, wavFolderInfo
-if nargin < 4 || isempty(exclusions)
+if nargin < 5 || isempty(exclusions)
     exclusions = zeros(0,2);
 end
 % Default return values: TODO assign fileName
@@ -46,8 +46,11 @@ end
 requestedDuration = (endTime - startTime)*86400;
 actualDuration = size(audio,1)/fileInfo(1).sampleRate;
 weighting = actualDuration/requestedDuration;
-
-decimate
+% audio = gpuArray(audio)
+audio = resample(audio,newRate, fileInfo(1).sampleRate);
+for i = 1:length(fileInfo);
+    fileInfo(i).sampleRate = newRate;
+end
 
 function fileInfo = findFilesInTimespan(fileInfo,startTime,endTime)
     % Given some file metadata and a time of interest, return only the 

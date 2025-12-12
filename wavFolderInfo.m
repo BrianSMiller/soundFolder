@@ -53,6 +53,7 @@ if status==0
         ],cacheFolder);
 end
 
+% wavFolderInfo called without any arguments
 if nargin == 0
     fprintf('Cache stored at %s:\n',cacheFolder);
     fprintf('Known soundFolders:\n');
@@ -83,7 +84,15 @@ if refreshCache==false
     end
 end
 
+% Folder metadata not in the cache, so need to create new fileInfo
 fileNames = recurseDir(folder,'*.wav');
+
+% No wav files found
+if isempty(fileNames)
+    fprintf('No wav files found in folder: %s\n',folder);
+    return
+end
+
 parfor i = 1:length(fileNames)
     fullName = fileNames(i).name;
     if customTimeStamp
