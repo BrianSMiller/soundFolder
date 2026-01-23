@@ -1,4 +1,4 @@
-function fileInfo = wavFolderInfo(folder,timeStampFormat,refreshCache)
+function fileInfo = xwavFolderInfo(folder,refreshCache)
 %fileInfo = wavFolderInfo(folder,timeStampFormat);
 % Get a soundFolder data structure from a folder full of wav files
 % FODLER is a folder full of wav files where the filename of each file 
