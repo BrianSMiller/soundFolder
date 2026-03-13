@@ -19,7 +19,7 @@ forms = {'yymmdd_HHMMSS';   % DCLDE 2015
     };
 
 % If a folder, just look at the first wav file
-if exist(fileName,"dir")
+if isfolder(fileName) && exist(fileName,"dir")==7
     fileName = dir([fileName '*.wav']);
     fileName = fileName(1).name;
 end

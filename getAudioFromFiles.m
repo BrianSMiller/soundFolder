@@ -1,16 +1,43 @@
-function [audio, weighting, fileInfo, startSample, endSample] = getAudioFromFiles(fileInfo,startTime,endTime,exclusions)
-% audio = getAudioFromFiles(fileInfo,startTime,endTime,exclusions)
-% audio contains the audio data as a column vector
-% weighting is the ratio of available audio to requested audio
-% fileInfo contains metadata from the function wavFolderInfo
-% startTime and endTime are matlab datenum,
-% exclusions are an Nx2 vector of datenums. audio between (n,1) and (n,2)
-% will be excluded.
+function [audio, weighting, fileInfo, startSample, endSample] = getAudioFromFiles(fileInfo,startTime,endTime,exclusions,channel,newRate)
+% [audio, weighting, fileInfo, startSample, endSample] = getAudioFromFiles(fileInfo,startTime,endTime,exclusions,channel,newRate)
+%
+% Reads audio data from a set of files spanning a requested time range,
+% with optional single-channel extraction and resampling.
+%
+% INPUTS (required):
+%   fileInfo   - metadata struct from wavFolderInfo
+%   startTime  - start of requested audio (MATLAB datenum)
+%   endTime    - end of requested audio (MATLAB datenum)
+%
+% INPUTS (optional):
+%   exclusions - Nx2 array of datenums; audio between exclusions(n,1) and
+%                exclusions(n,2) will be excluded. Default: none.
+%   channel    - channel index to extract (1-indexed integer). 
+%                Default: [] (return all channels).
+%   newRate    - target sample rate in Hz for resampling.
+%                Default: [] (no resampling; return at original sample rate).
+%
+% OUTPUTS:
+%   audio       - audio data matrix (samples x channels), or column vector
+%                 if a single channel is selected
+%   weighting   - ratio of available audio to requested audio duration
+%   fileInfo    - updated fileInfo struct (sample rate updated if resampled)
+%   startSample - sample indices used for reading (per file segment)
+%   endSample   - sample indices used for reading (per file segment)
+%
 % This function is part of the soundFolder package.
-% See also: audioread, wavread, wavFolderInfo
+% See also: audioread, wavFolderInfo, resample
+
 if nargin < 4 || isempty(exclusions)
     exclusions = zeros(0,2);
 end
+if nargin < 5 || isempty(channel)
+    channel = [];       % default: return all channels
+end
+if nargin < 6 || isempty(newRate)
+    newRate = [];       % default: no resampling
+end
+
 % Default return values: TODO assign fileName
 audio = [];
 weighting = 0;
@@ -18,11 +45,13 @@ startSample = [];
 endSample = [];
 fileIndex = [];
 
+% --- Find files that overlap the requested time span ---
 fileInfo = findFilesInTimespan(fileInfo,startTime,endTime);
 if isempty(fileInfo)
     return
 end
 
+% --- Compute inclusion windows (accounting for exclusions) ---
 [includeStartTime, includeEndTime] = getInclusionTimes(startTime, endTime, exclusions);
 for i = 1:length(includeStartTime)
     [ss, es, ix] = getStartAndEndSamples(fileInfo, includeStartTime(i), includeEndTime(i));
@@ -43,18 +72,37 @@ for i = 1:length(fileIndex)
     audio = [audio; wav];
 end
 
+% --- Compute weighting (ratio of retrieved to requested duration) ---
 requestedDuration = (endTime - startTime)*86400;
 actualDuration = size(audio,1)/fileInfo(1).sampleRate;
 weighting = actualDuration/requestedDuration;
+
+if isempty(audio)
+    return
+end
+
+% --- Optional: extract single channel ---
+if ~isempty(channel)
+    audio = audio(:, channel);
+end
+
+% --- Optional: resample ---
+if ~isempty(newRate) && newRate ~= fileInfo(1).sampleRate
+    q     = fileInfo(1).sampleRate / newRate;
+    audio = resample(audio, 1, q);
+    for i = 1:length(fileInfo)
+        fileInfo(i).sampleRate = newRate;
+    end
+end
+
+% =========================================================================
+% Local functions
+% =========================================================================
 
 function fileInfo = findFilesInTimespan(fileInfo,startTime,endTime)
     % Given some file metadata and a time of interest, return only the 
     % metadata that corresponds to the time of interest
 
-
-    % Create an index of files that contain the timespan of interest
-%     [~, firstFile] = histc(startTime,[fileInfo.startDate]');
-%     [~, lastFile] =  histc(endTime,  [fileInfo.endDate]');
     firstFile = find(startTime >= [fileInfo.startDate],1,'last');
     lastFile = find(endTime <= [fileInfo.endDate],1,'first');
     
@@ -64,15 +112,12 @@ function fileInfo = findFilesInTimespan(fileInfo,startTime,endTime)
         firstFile = lastFile; 
     end 
     
-    fileRequired = firstFile:lastFile;
+    % Corner case: endTime is after all file end times
+    if ~isempty(firstFile) && isempty(lastFile)
+        lastFile = firstFile;
+    end
 
-    % The code below works reliably, but is slower than it needs to be
-%     [fileName, fileStartTime, fileEndTime] = getFileNamesAndTimes(fileInfo);
-%     fileRequired = zeros(1,length(fileName));
-%     for i = 1:length(fileName);
-%         fileRequired(i) = doTimespansOverlap(startTime,endTime,fileStartTime(i),fileEndTime(i));
-%     end
-%     fileRequired = find(fileRequired);% Convert from logical to integer indicies
+    fileRequired = firstFile:lastFile;
     fileInfo = fileInfo(fileRequired);
 
 function [fileNames, fileStartTimes, fileEndTimes] = getFileNamesAndTimes(fileInfo)
