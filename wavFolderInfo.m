@@ -43,8 +43,10 @@ persistent lastFileInfo;
 persistent lastFolder; 
 
 cacheFolder = getSoundCacheFolder;
-warning('off','MATLAB:MKDIR:DirectoryExists');
-status = mkdir(cacheFolder);
+status = ~exist("cacheFolder","dir");
+if  ~status
+    status = mkdir(cacheFolder);
+end
 if status==0
     error([...
         'wavFolderInfo could not load the cache of soundFolders:\n',...
@@ -104,6 +106,10 @@ parfor i = 1:length(fileNames)
         fprintf('Reading audio metadata for file %g/%g: %s\n',i,length(fileNames),fileNames(i).name);
     end
 end
+
+% Sort by date (in case file names aren't already sorted that way
+[~, ix] = sort([fileInfo.startDate]); 
+fileInfo = fileInfo(ix)
 
 save(cacheFile,'fileInfo'); 
 lastFolder = folder;
