@@ -1,4 +1,4 @@
-function fileInfo = wavFolderInfo(folder,timeStampFormat,refreshCache, supressProgress)
+function fileInfo = wavFolderInfo(folder,timeStampFormat,refreshCache, supressProgress, parallelThreshold)
 %fileInfo = wavFolderInfo(folder,timeStampFormat);
 % Get a soundFolder data structure from a folder full of wav files
 % FODLER is a folder full of wav files where the filename of each file 
@@ -21,6 +21,9 @@ function fileInfo = wavFolderInfo(folder,timeStampFormat,refreshCache, supressPr
 %    timeStampFormat = 'yyyymmdd_HHMMSS';
 %    folderInfo = wavFolderInfo(wavFolder,timeStampFormat);
 % Brian Miller 2017
+if nargin < 5
+    parallelThreshold = 200;
+end
 
 if nargin < 4
     supressProgress = false;
@@ -95,21 +98,36 @@ if isempty(fileNames)
     return
 end
 
-parfor i = 1:length(fileNames)
-    fullName = fileNames(i).name;
-    if customTimeStamp
-        fileInfo(i) = readWavHeader(fullName,timeStampFormat);
-    else
-        fileInfo(i) = readWavHeader(fullName);
+if length(fileNames) > parallelThreshold
+
+    parfor i = 1:length(fileNames)
+        fullName = fileNames(i).name;
+        if customTimeStamp
+            fileInfo(i) = readWavHeader(fullName,timeStampFormat);
+        else
+            fileInfo(i) = readWavHeader(fullName);
+        end
+        if ~supressProgress
+            fprintf('Reading audio metadata for file %g/%g: %s\n',i,length(fileNames),fileNames(i).name);
+        end
     end
-    if ~supressProgress
-        fprintf('Reading audio metadata for file %g/%g: %s\n',i,length(fileNames),fileNames(i).name);
+else
+    for i = 1:length(fileNames)
+        fullName = fileNames(i).name;
+        if customTimeStamp
+            fileInfo(i) = readWavHeader(fullName,timeStampFormat);
+        else
+            fileInfo(i) = readWavHeader(fullName);
+        end
+        if ~supressProgress
+            fprintf('Reading audio metadata for file %g/%g: %s\n',i,length(fileNames),fileNames(i).name);
+        end
     end
 end
 
 % Sort by date (in case file names aren't already sorted that way
 [~, ix] = sort([fileInfo.startDate]); 
-fileInfo = fileInfo(ix)
+fileInfo = fileInfo(ix);
 
 save(cacheFile,'fileInfo'); 
 lastFolder = folder;
