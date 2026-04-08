@@ -1,4 +1,4 @@
-function fileInfo = wavFolderInfo(folder, timeStampFormat, refreshCache, suppressProgress, parallelThreshold)
+function fileInfo = wavFolderInfo(folder, timeStampFormat, refreshCache, verbose, parallelThreshold)
 % fileInfo = wavFolderInfo(folder, timeStampFormat)
 %
 % Build a soundFolder metadata struct from a folder of timestamped WAV files.
@@ -16,7 +16,10 @@ function fileInfo = wavFolderInfo(folder, timeStampFormat, refreshCache, suppres
 %                    if the format is ambiguous; an error is thrown if no known
 %                    format matches.
 %   refreshCache     Force cache rebuild. Default: false.
-%   suppressProgress Suppress per-file progress messages. Default: false.
+%   verbose          Print progress and informational messages. Default: true.
+%                    Set false to suppress all non-error output (useful when
+%                    calling from scripts or batch pipelines where the cache
+%                    will be warm after the first call).
 %   parallelThreshold Use parfor above this many files. Default: 200.
 %
 % OUTPUT
@@ -32,10 +35,13 @@ function fileInfo = wavFolderInfo(folder, timeStampFormat, refreshCache, suppres
 %   % Force cache rebuild after adding files
 %   sf = wavFolderInfo('D:\recordings\casey2019\wav\', [], true);
 %
+%   % Silent — no output at all (suitable for batch / gallery use)
+%   sf = wavFolderInfo('D:\recordings\casey2019\wav\', '', false, false);
+%
 % See also: getAudioFromFiles, guessFileNameTimestamp, filenameToTimeStamp
 
 if nargin < 5, parallelThreshold = 200; end
-if nargin < 4, suppressProgress  = false; end
+if nargin < 4, verbose           = true; end
 if nargin < 3, refreshCache      = false; end
 if nargin < 2, timeStampFormat   = ''; end
 
@@ -53,7 +59,8 @@ if ~exist(cacheFolder, 'dir')
     end
 end
 
-% No arguments — list known folders in cache
+% No arguments — list known folders in cache (always printed; this is an
+% explicit query, not incidental progress output)
 if nargin == 0
     fprintf('Cache stored at %s:\n', cacheFolder);
     d = dir(fullfile(cacheFolder, '*.mat'));
@@ -84,8 +91,10 @@ if ~refreshCache
             return
         end
         % Cache exists but empty — fall through to rebuild
-        warning('wavFolderInfo:emptyCache', ...
-            'Cache for this folder is empty — rebuilding.\n  %s', folder);
+        if verbose
+            warning('wavFolderInfo:emptyCache', ...
+                'Cache for this folder is empty — rebuilding.\n  %s', folder);
+        end
     end
 end
 
@@ -101,9 +110,9 @@ end
 if ~customTimeStamp
     firstFile = fileNames(1).name;
     [~, fname] = fileparts(firstFile);
-    [ts, detectedForms] = guessFileNameTimestamp(firstFile);
+    [ts, detectedForm, ~, allForms] = guessFileNameTimestamp(firstFile);
 
-    if isempty(ts) || isempty(detectedForms)
+    if isempty(ts)
         error('wavFolderInfo:unknownFormat', ...
             ['Could not determine timestamp format from filename:\n' ...
              '  %s\n' ...
@@ -111,17 +120,16 @@ if ~customTimeStamp
              '  wavFolderInfo(folder, ''yyyy-mm-dd_HH-MM-SS'')'], fname);
     end
 
-    if iscell(detectedForms)
-        % Multiple formats matched — warn and use first
+    if numel(allForms) > 1 && verbose
         warning('wavFolderInfo:ambiguousFormat', ...
             ['Ambiguous timestamp format for:\n' ...
              '  %s\n' ...
              'Matched formats: %s\n' ...
-             'Using ''%s''. Specify format explicitly to suppress this warning.'], ...
-            fname, strjoin(detectedForms, ', '), detectedForms{1});
-        timeStampFormat = detectedForms{1};
-    else
-        timeStampFormat = detectedForms;
+             'Using ''%s'' (most specific). Specify format explicitly to suppress this warning.'], ...
+            fname, strjoin(allForms, ', '), detectedForm);
+    end
+    timeStampFormat = detectedForm;
+    if verbose
         fprintf('wavFolderInfo: detected timestamp format ''%s'' from %s\n', ...
             timeStampFormat, fname);
     end
@@ -129,20 +137,22 @@ if ~customTimeStamp
 end
 
 %% Read WAV headers
-fprintf('Reading audio metadata for %d file(s) in:\n  %s\n', ...
-    numel(fileNames), folder);
+if verbose
+    fprintf('Reading audio metadata for %d file(s) in:\n  %s\n', ...
+        numel(fileNames), folder);
+end
 
 if numel(fileNames) > parallelThreshold
     parfor i = 1:numel(fileNames)
         fileInfo(i) = readWavHeader(fileNames(i).name, timeStampFormat); %#ok<PFBNS>
-        if ~suppressProgress
+        if verbose
             fprintf('  %d/%d: %s\n', i, numel(fileNames), fileNames(i).name);
         end
     end
 else
     for i = 1:numel(fileNames)
         fileInfo(i) = readWavHeader(fileNames(i).name, timeStampFormat);
-        if ~suppressProgress
+        if verbose
             fprintf('  %d/%d: %s\n', i, numel(fileNames), fileNames(i).name);
         end
     end
@@ -152,6 +162,8 @@ end
 epoch = datenum([0 1 1 0 0 0]);
 badIdx = abs([fileInfo.startDate] - epoch) < 1;
 if any(badIdx)
+    % Always warn on bad timestamps regardless of verbose — this indicates
+    % wrong results, not just noisy progress output.
     badFiles = {fileNames(badIdx).name};
     warning('wavFolderInfo:badTimestamp', ...
         ['%d file(s) have timestamps at epoch (year 0) — format may be wrong:\n' ...
