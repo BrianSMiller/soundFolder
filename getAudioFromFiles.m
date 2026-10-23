@@ -105,8 +105,10 @@ end
 
 % --- Optional: resample ---
 if newRate ~= 0 && newRate ~= fileInfo(1).sampleRate
-    q     = fileInfo(1).sampleRate / newRate;
-    audio = resample(audio, 1, q);
+    % resample needs whole-number factors; rat finds them for any pair of
+    % rates (e.g. 253 Hz to 500 Hz), not only exact divisors.
+    [p, q] = rat(newRate / fileInfo(1).sampleRate);
+    audio  = resample(audio, p, q);
     for i = 1:length(fileInfo)
         fileInfo(i).sampleRate = newRate;
     end
