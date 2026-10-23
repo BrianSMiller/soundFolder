@@ -24,6 +24,7 @@ function [timestamp, form, allTimestamps, allForms] = guessFileNameTimestamp(fil
 % See also: filenameToTimeStamp, wavFolderInfo
 
 forms = {
+    'yyyymmdd_HHMMSS_FFF'; % PAMGuard          e.g. INV_20190119_021358_256.wav
     'yymmdd_HHMMSS';       % DCLDE 2015        e.g. CINMS18B_d06_120622_055731.d100.x.wav
     'yyyymmdd_HHMMSS';     % SORP Annot. Lib.  e.g. 20150115_170000.wav
     'yyyy-mm-dd_HH-MM-SS'; % AAD MAR           e.g. 200_2013-12-25_06-00-00.wav
