@@ -14,6 +14,12 @@ if nargin==0
     return
 end
 
+% Match against the file name only. Folder names can hold digits that look
+% like a timestamp (e.g. Dep_01_yellowblack_05112023_113900\20231105_103259.wav),
+% which would otherwise give two matches and a wrong or two-element result.
+% Both separators are handled, so Windows paths parse on any platform.
+fileName = regexprep(fileName, '^.*[\\/]', '');
+
 % Swap the year, month, etc for individual digits
 expression = regexprep(timeStampFormat,'dd','\\d\\d');
 if contains(timeStampFormat,'yyyy') 
@@ -67,6 +73,13 @@ print(fname,form);
 fname = '7387.230116190739.wav';
 form = 'yymmddHHMMSS';
 print(fname,form);
+
+% Folder name that also looks like a timestamp: only the file name counts
+fname = 'W:\Tags\November 2023\Dep_01_yellowblack_05112023_113900\20231105_103259.wav';
+form = 'yyyymmdd_HHMMSS';
+print(fname,form);
+assert(abs(filenameToTimeStamp(fname,form) - datenum(2023,11,5,10,32,59)) < 1e-9, ...
+    'Timestamp should come from the file name, not the folder name');
 
 
 function print(fname,form)
