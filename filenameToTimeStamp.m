@@ -6,7 +6,9 @@ function timeStamp = filenameToTimeStamp(fileName,timeStampFormat)
 % Raven, etc.
 % FILENAME - A string containing the name to the wav file (e.g. output from DIR)
 % TIMESTAMPFORMAT - A string compatible with Matlab DATESTR FORMATOUT, 
-% for example, 'yyyy-mm-dd_HH-MM-SS'
+% for example, 'yyyy-mm-dd_HH-MM-SS'. Milliseconds are FFF, as in DATENUM
+% (e.g. 'yyyymmdd_HHMMSS_FFF' for PAMGuard's INV_20190119_021358_256.wav);
+% the older 'fff' is read the same way.
 % This function is part of the soundFolder package.
 % See also: wavFolderInfo, audioread, readTimeStamp
 if nargin==0
@@ -31,7 +33,8 @@ expression = regexprep(expression,'mm','\\d\\d');
 expression = regexprep(expression,'HH','\\d\\d');
 expression = regexprep(expression,'MM','\\d\\d');
 expression = regexprep(expression,'SS','\\d\\d');
-expression = regexprep(expression,'fff','\\d\\d\\d');
+timeStampFormat = strrep(timeStampFormat,'fff','FFF');   % datenum's milliseconds
+expression = regexprep(expression,'(fff|FFF)','\\d\\d\\d');
 
 % Now match the string
 str = regexp(fileName,expression,'match');
@@ -81,7 +84,14 @@ print(fname,form);
 assert(abs(filenameToTimeStamp(fname,form) - datenum(2023,11,5,10,32,59)) < 1e-9, ...
     'Timestamp should come from the file name, not the folder name');
 
+% Milliseconds in the file name (PAMGuard)
+fname = 'INV_20190119_021358_256.wav';
+form = 'yyyymmdd_HHMMSS_FFF';
+print(fname,form);
+assert(abs(filenameToTimeStamp(fname,form) - datenum(2019,1,19,2,13,58.256)) < 1e-9, ...
+    'Milliseconds should be read from the file name');
+
 
 function print(fname,form)
 fprintf('%38s:\t %s\t %s\n',...
-    fname, datestr(filenameToTimeStamp(fname,form)), form);
+    fname, datestr(filenameToTimeStamp(fname,form),'yyyy-mm-dd HH:MM:SS.FFF'), form);
